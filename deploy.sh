@@ -22,7 +22,7 @@ function deploy_WordPress () {
     read -rsp 'PASSWORD: ' PASSWORD
     mkdir  ~/wordpress-compose
 
-    echo "FROM orchardup/php5
+    echo "FROM thatsamguy/xenial-php71
     ADD . /code" > ~/wordpress-compose/Dockerfile
 
     echo "
