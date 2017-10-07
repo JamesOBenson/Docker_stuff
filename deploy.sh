@@ -4,47 +4,58 @@ export USERNAME="ubuntu"
 function install_Docker (){
     sudo apt update
     sudo apt install curl
-    curl -fsSL htts://get.docker.com/ | sh
+    curl -fsSL https://get.docker.com/ | sh
+    sudo addgroup docker
     sudo usermod -aG docker $USERNAME
-    docker run hello-world
+    sudo docker run hello-world
     # Should see, Hello from Docker....
     # If not, 
     # sudo service docker restart
 }
 
 function install_DockerCompose () {
-    su root -c ./Docker_root_scripts.sh
+    sudo ./Docker_root_scripts.sh
     docker-compose -v
 
 }
 function deploy_WordPress () {
-    read -rp 'IP ADDRESS: ' IP_ADDRESS
     read -rsp 'PASSWORD: ' PASSWORD
     mkdir  ~/wordpress-compose
 
     echo "FROM orchardup/php5
-    ADD . /code" >> ~/wordpress-compose/Dockerfile
+    ADD . /code" > ~/wordpress-compose/Dockerfile
 
     echo "
-wordpress:
-    image: wordpress
-    links:
-     - mariadb:mysql
-    environment:
-     - WORDPRESS_DB_PASSWORD=$PASSWORD
-    ports:
-     - ""$IP_ADDRESS":80:80function " 
-    volumes:
-     - ./code:/code
-     - ./html:/var/www/html
-mariadb:
-    image: mariadb
-    environment:
-     - MYSQL_ROOT_PASSWORD=$PASSWORD
-     - MYSQL_DATABASE=wordpress
-    volumes:
-     - ./database:/var/lib/mysql
-" >> ~/wordpress-compose/docker-compose.yml
+version: '2'
+
+services:
+   db:
+     image: mysql:5.7
+     volumes:
+       - db_data:/var/lib/mysql
+     restart: always
+     environment:
+       MYSQL_ROOT_PASSWORD: $PASSWORD
+       MYSQL_DATABASE: wordpress
+       MYSQL_USER: wordpress
+       MYSQL_PASSWORD: $PASSWORD
+
+   wordpress:
+     depends_on:
+       - db
+     image: wordpress:latest
+     ports:
+       - "8000:80"
+     restart: always
+     environment:
+       WORDPRESS_DB_HOST: db:3306
+       WORDPRESS_DB_USER: wordpress
+       WORDPRESS_DB_PASSWORD: $PASSWORD
+     volumes:
+       - ./code:/code
+       - ./html:/var/www/html
+volumes:
+    db_data:" > ~/wordpress-compose/docker-compose.yml
     docker-compose up -d -f ~/wordpress-compose/docker-compose.yml
 }
 
